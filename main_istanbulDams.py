@@ -13,6 +13,7 @@ import seaborn as sns
 from importlib import reload
 import urllib
 import json
+import datetime
 
 
 
@@ -34,29 +35,38 @@ df=pd.DataFrame(columns=['Date','GeneralDamOccupancyRate','GeneralDamReservedWat
 for child in records:
     df=df.append({'Date':child.get('DATE'),'GeneralDamOccupancyRate':child.get('GENERAL_DAM_OCCUPANCY_RATE'),'GeneralDamReservedWater':child.get('GENERAL_DAM_RESERVED_WATER')},ignore_index=True)
 
+# %%--------------------------------------------
+# Data Organization
+# --------------------------------------------
+# Making Date column index
+print('Data acquired from '+data_dict.get('help'))
+print('Sql code: '+result.get('sql'))
+print('First record date: '+df.loc[0,'Date'])
+print('Last record date: '+df.iloc[-1,0])
 
-# --------------------------------------------
-# Exploratory data analysis
-# --------------------------------------------
+df['Date']=pd.to_datetime(df['Date'],yearfirst=True,format='%Y-%m-%d')
+df.set_index(df['Date'],drop=True,inplace=True)
+df.drop(columns='Date',inplace=True)
+df=df.asfreq(freq='d')
+
 
 
 
 
 # %%--------------------------------------------
-# Feature Analysis
+# Exploratory data analysis
 # --------------------------------------------
+plt.figure(figsize=(20,10))
+df['GeneralDamReservedWater'].plot()
+plt.title('Reserved Water in Dams')
+plt.ylabel('[M m^3]')
+plt.grid(b=True,which='both',axis='both')
 
 
-#%% --------------------------------------------
-# Feature Analysis for continuous features (type=2)
-# ----------------------------------------------
 
-# ----------------------------------------------
-
-#%% --------------------------------------------
-# Feature Analysis for columns with type=3
-# ----------------------------------------------
-
+# %%--------------------------------------------
+# Time Series Analysis
+# --------------------------------------------
 
 
 
