@@ -82,10 +82,19 @@ df.rolling(window=7).mean()[reservedWater].plot()
 # Montly
 df.rolling(window=30).mean()[reservedWater].plot()
 
-# %%--------------------------------------------
+# --------------------------------------------
 # Time Series Analysis
 # --------------------------------------------
+'''
+Models to consider:
+1) Simple Exponential Smoothing
+2) Double Exponential Smoothing
+3) Triple Exponential Smoothing
+4) ARIMA
+5) Dickey Fuller for stationary test
+6) SARIMAX
 
+'''
 # %%--------------------------------------------
 # ETS Decomposition
 # --------------------------------------------
@@ -96,38 +105,64 @@ sd.seasonal
 sd.resid
 sd.plot()
 
+
+#%% --------------------------------------------
+# Train-test-split & Scaling
+# --------------------------------------------
+split=round(len(df)*0.8)
+train_df=df.iloc[:split]
+test_df=df.iloc[split:]
+
+
 # %%--------------------------------------------
 # Simple Exponential Smoothing
 # --------------------------------------------
-model=SimpleExpSmoothing(df[reservedWater])
+
+
+model=SimpleExpSmoothing(train_df[reservedWater])
 fit_model=model.fit(optimized=True,use_brute=True)
-fit_model.fittedvalues.plot()
+# predictions=fit_model.forecast(len(test_df))
+predictions=fit_model.predict(start=test_df.index.values[0],end=test_df.index.values[-1])
 
-plt.figure(figsize=(12,6))
-plt.plot(df.index.values,fit_model.fittedvalues.shift(100))
-plt.plot(df.index.values,df[reservedWater])
-plt.legend()
-plt.show()
+def plot_results(df,col,fittedValues,title):
+    '''
+    Objective: plots actual and fittedvalues
+    Input:
+    df: data as DataFrame
+    col: column name, string
+    fittedValues: fitted values
+    '''
+    
+    plt.figure(figsize=(12,6))
+    plt.plot(df.index.values,fittedValues,label='fittedValues')
+    plt.plot(df.index.values,df[col],label='actuals')
+    plt.legend()
+    plt.grid(b=True,which='both',axis='both')
+    plt.title(title)
+    plt.show()
+
+def plot_results2(train,col,test,prediction,title):
+    '''
+    Objective: plots train, test and predictions
+    Input:
+    train: train data as DataFrame
+    col: column name, string
+    test: test data as DataFrame
+    prediction: forecast
+    '''
+    plt.figure(figsize=(12,6))
+    plt.plot(train.index.values,train[col],label='actuals')
+    plt.plot(test.index.values,test[col],label='test')
+    plt.plot(test.index.values,prediction,label='prediction')
+    plt.legend()
+    plt.grid(b=True,which='both',axis='both')
+    plt.title(title)
+    plt.show()
+
+# plot_results(train_df,reservedWater,fit_model.fittedvalues,'SimpleExpSmoothing')
+plot_results2(train_df,reservedWater,test_df,predictions,'SimpleExpSmoothing')
 
 
-
-#%% --------------------------------------------
-# Outlier removal from features
-# ----------------------------------------------
-
-
-#%% --------------------------------------------
-# Train-valid-split & Scaling
-# --------------------------------------------
-
-
-#%%
-# Scaling
-
-
-#%% --------------------------------------------
-# Fit & Prediction of Linear Regression
-# --------------------------------------------
 
 
 #%% --------------------------------------------
