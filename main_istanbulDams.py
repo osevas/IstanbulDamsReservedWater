@@ -17,7 +17,9 @@ import datetime
 
 import statsmodels.api as sm
 from statsmodels.tsa.seasonal import seasonal_decompose
-from statsmodels.tsa.holtwinters import SimpleExpSmoothing
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing,ExponentialSmoothing
+from statsmodels.tools.eval_measures import mse,rmse,meanabs
+
 
 
 
@@ -70,17 +72,19 @@ reservedWater='GeneralDamReservedWater'
 # Initial Data Visualization
 # --------------------------------------------
 plt.figure(figsize=(20,10))
-df[reservedWater].plot()
+df[reservedWater].plot(label='Reserved_Water')
 plt.title('Reserved Water in Dams')
 plt.ylabel('[M m^3]')
 plt.grid(b=True,which='both',axis='both')
 
 # MOVING AVERAGES
 # Weekly
-df.rolling(window=7).mean()[reservedWater].plot()
+df.rolling(window=7).mean()[reservedWater].plot(label='7day-MA')
 
 # Montly
-df.rolling(window=30).mean()[reservedWater].plot()
+df.rolling(window=30).mean()[reservedWater].plot(label='30day-MA')
+plt.legend()
+plt.show()
 
 # --------------------------------------------
 # Time Series Analysis
@@ -134,8 +138,8 @@ def plot_results(df,col,fittedValues,title):
     '''
     
     plt.figure(figsize=(12,6))
-    plt.plot(df.index.values,fittedValues,label='fittedValues')
     plt.plot(df.index.values,df[col],label='actuals')
+    plt.plot(df.index.values,fittedValues,label='fittedValues')
     plt.legend()
     plt.grid(b=True,which='both',axis='both')
     plt.title(title)
@@ -162,8 +166,39 @@ def plot_results2(train,col,test,prediction,title):
 # plot_results(train_df,reservedWater,fit_model.fittedvalues,'SimpleExpSmoothing')
 plot_results2(train_df,reservedWater,test_df,predictions,'SimpleExpSmoothing')
 
+# %%--------------------------------------------
+# Exponential Smoothing
+# --------------------------------------------
+def ExpSmoothing(train,col,test,method):
+    model2=ExponentialSmoothing(train[col],trend='add',seasonal='add')
+    fit_model2=model2.fit(optimized=True,remove_bias=True,method=method)
+    predictions2=fit_model2.predict(start=test.index.values[0],end=test.index.values[-1])
+    # plot_results(train_df,reservedWater,fit_model2.fittedvalues,'ExponentialSmoothing')
+    plot_results2(train_df,reservedWater,test_df,predictions2,'ExponentialSmoothing')
+    return predictions2
 
 
+def printErrors(test,pred,model):
+    '''
+    Objective: to print errors of the models
+    Inputs:
+    test: test dataframe
+    pred: predictions
+    model: model that is used
+    Outputs:
+    Mean absolute error, mean squared error, root mean squared error
+    '''
+    print('MAE of '+model+': {:.4}'.format(meanabs(test,pred,axis=0)))
+    print('MSE of '+model+': {:.4}'.format(mse(test,pred,axis=0)))
+    print('RMSE of '+model+': {:.4}'.format(rmse(test,pred,axis=0)))
+
+methods=["L-BFGS-B" , 'TNC', 'SLSQP', 'Powell', 'trust-constr','basinhopping','least_squares']
+
+for method in methods:
+    print('Method: '+method)
+    predictions2=ExpSmoothing(train_df,reservedWater,test_df,method)
+    printErrors(test_df[reservedWater],predictions2,'ExponentialSmoothing')
+    print('\n')
 
 #%% --------------------------------------------
 # Comparison of models
